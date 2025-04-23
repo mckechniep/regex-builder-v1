@@ -14,7 +14,8 @@ const StandardRegexInput = ({onRegexChange}: { onRegexChange: (category: string,
 
   const generateRegex = () => {
     const wordArray = words.split(',').map(word => word.trim()).filter(word => word !== '');
-    const regexPattern = wordArray.length > 0 ? `\\b(${wordArray.join('|')})\\b` : '';
+    const escapedWordArray = wordArray.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const regexPattern = wordArray.length > 0 ? `\\b(${escapedWordArray.join('|')})\\b` : '';
     setRegex(regexPattern);
     onRegexChange(category, regexPattern);
   };
@@ -46,7 +47,7 @@ const StandardRegexInput = ({onRegexChange}: { onRegexChange: (category: string,
         {regex && (
           <div className="grid gap-2">
             <Label>Regex Output</Label>
-            <Input readOnly value={regex ? `r"\\b(${words.split(',').map(word => word.trim()).filter(word => word !== '').join('|')})\\b"` : ''}/>
+            <Input readOnly value={regex ? `r"${regex}"` : ''}/>
           </div>
         )}
       </CardContent>
@@ -63,7 +64,9 @@ const VariableLookaheadInput = ({onRegexChange}: { onRegexChange: (category: str
 
   const generateRegex = () => {
     const triggerWordArray = triggerWords.split(',').map(word => word.trim()).filter(word => word !== '');
-    const regexPattern = triggerWordArray.length > 0 ? `\\b(${matchWord})\\b.{0,${charLength}}\\b(${triggerWordArray.join('|')})\\b` : '';
+    const escapedTriggerWordArray = triggerWordArray.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const escapedMatchWord = matchWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regexPattern = triggerWordArray.length > 0 ? `\\b(${escapedMatchWord})\\b.{0,${charLength}}\\b(${escapedTriggerWordArray.join('|')})\\b` : '';
     setRegex(regexPattern);
     onRegexChange(category, regexPattern);
   };
@@ -114,7 +117,7 @@ const VariableLookaheadInput = ({onRegexChange}: { onRegexChange: (category: str
         {regex && (
           <div className="grid gap-2">
             <Label>Regex Output</Label>
-            <Input readOnly value={regex ? `r"\\b(${matchWord})\\b.{0,${charLength}}\\b(${triggerWords.split(',').map(word => word.trim()).filter(word => word !== '').join('|')})\\b"` : ''}/>
+            <Input readOnly value={regex ? `r"${regex}"` : ''}/>
           </div>
         )}
       </CardContent>
@@ -131,7 +134,10 @@ const VariableLookbehindInput = ({onRegexChange}: { onRegexChange: (category: st
 
   const generateRegex = () => {
     const triggerWordArray = triggerWords.split(',').map(word => word.trim()).filter(word => word !== '');
-    const regexPattern = triggerWordArray.length > 0 ? `\\b(${triggerWordArray.join('|')})\\b.{0,${charLength}}\\b(${matchWord})\\b` : '';
+    const escapedTriggerWordArray = triggerWordArray.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const escapedMatchWord = matchWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const regexPattern = triggerWordArray.length > 0 ? `\\b(${escapedTriggerWordArray.join('|')})\\b.{0,${charLength}}\\b(${escapedMatchWord})\\b` : '';
     setRegex(regexPattern);
     onRegexChange(category, regexPattern);
   };
@@ -182,7 +188,7 @@ const VariableLookbehindInput = ({onRegexChange}: { onRegexChange: (category: st
         {regex && (
           <div className="grid gap-2">
             <Label>Regex Output</Label>
-            <Input readOnly value={regex ? `r"\\b(${triggerWords.split(',').map(word => word.trim()).filter(word => word !== '').join('|')})\\b.{0,${charLength}}\\b(${matchWord})\\b"` : ''}/>
+            <Input readOnly value={regex ? `r"${regex}"` : ''}/>
           </div>
         )}
       </CardContent>
@@ -213,17 +219,17 @@ const Home: React.FC = () => {
 
     // Combine standard regexes
     Object.keys(standardRegexes).forEach(category => {
-      combinedDictionary[category] = [`r"${standardRegexes[category]}"`];
+      combinedDictionary[category] = [`${standardRegexes[category]}`];
     });
 
     // Combine lookahead regexes
     Object.keys(lookaheadRegexes).forEach(category => {
-      combinedDictionary[category] = [`r"${lookaheadRegexes[category]}"`];
+      combinedDictionary[category] = [`${lookaheadRegexes[category]}`];
     });
 
     // Combine lookbehind regexes
     Object.keys(lookbehindRegexes).forEach(category => {
-      combinedDictionary[category] = [`r"${lookbehindRegexes[category]}"`];
+      combinedDictionary[category] = [`${lookbehindRegexes[category]}`];
     });
 
     setDictionary(JSON.stringify(combinedDictionary, null, 2));
