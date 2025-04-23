@@ -14,7 +14,7 @@ const StandardRegexInput = ({onRegexChange}: { onRegexChange: (category: string,
 
   const generateRegex = () => {
     const wordArray = words.split(',').map(word => word.trim()).filter(word => word !== '');
-    const regexPattern = wordArray.length > 0 ? `\\b(${wordArray.join('|')})\\b` : '';
+    const regexPattern = wordArray.length > 0 ? `\\b(${wordArray.map(word => word).join('|')})\\b` : '';
     setRegex(regexPattern);
     onRegexChange(category, regexPattern);
   };
@@ -209,18 +209,21 @@ const Home: React.FC = () => {
   };
 
   const handleGenerateDictionary = () => {
-    const combinedDictionary: {[key: string]: string} = {};
+    let combinedDictionary: {[key: string]: string[]} = {};
 
+    // Process standard regexes
     Object.keys(standardRegexes).forEach(category => {
-      combinedDictionary[category] = standardRegexes[category];
+      combinedDictionary[category] = [`${standardRegexes[category]}`];
     });
 
+    // Process lookahead regexes
     Object.keys(lookaheadRegexes).forEach(category => {
-      combinedDictionary[category] = lookaheadRegexes[category];
+      combinedDictionary[category] = [`${lookaheadRegexes[category]}`];
     });
 
+    // Process lookbehind regexes
     Object.keys(lookbehindRegexes).forEach(category => {
-      combinedDictionary[category] = lookbehindRegexes[category];
+      combinedDictionary[category] = [`${lookbehindRegexes[category]}`];
     });
 
     setDictionary(JSON.stringify(combinedDictionary, null, 2));
