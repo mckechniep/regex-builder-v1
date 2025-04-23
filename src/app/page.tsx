@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -54,7 +53,7 @@ const StandardRegexInput = () => {
   );
 };
 
-const VariableLookaroundInput = () => {
+const VariableLookaheadInput = () => {
   const [category, setCategory] = useState('');
   const [matchWord, setMatchWord] = useState('');
   const [charLength, setCharLength] = useState('150');
@@ -63,14 +62,81 @@ const VariableLookaroundInput = () => {
 
   const generateRegex = () => {
     const triggerWordArray = triggerWords.split(',').map(word => word.trim()).filter(word => word !== '');
-    const regexPattern = triggerWordArray.length > 0 ? `\\b(${matchWord}.{{0,${charLength}}}(${triggerWordArray.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')}))\\b` : '';
+    const regexPattern = triggerWordArray.length > 0 ? `\\b(${matchWord}.{0,${charLength}}(${triggerWordArray.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')}))\\b` : '';
     setRegex(regexPattern);
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Variable Lookaround Input</CardTitle>
+        <CardTitle>Variable Look-Ahead Input</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="category">Category</Label>
+          <Input
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="matchWord">Matching Word/Phrase</Label>
+          <Input
+            id="matchWord"
+            value={matchWord}
+            onChange={(e) => setMatchWord(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="charLength">Character Length (0-150)</Label>
+          <Input
+            id="charLength"
+            type="number"
+            min="0"
+            max="150"
+            value={charLength}
+            onChange={(e) => setCharLength(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="triggerWords">Trigger Words/Phrases</Label>
+          <Textarea
+            id="triggerWords"
+            placeholder="aa, sobriety, recovery"
+            value={triggerWords}
+            onChange={(e) => setTriggerWords(e.target.value)}
+          />
+        </div>
+        <Button onClick={generateRegex}>Generate Regex</Button>
+        {regex && (
+          <div className="grid gap-2">
+            <Label>Regex Output</Label>
+            <Input readOnly value={`"${category}": [ r"${regex}" ]`} />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const VariableLookbehindInput = () => {
+  const [category, setCategory] = useState('');
+  const [matchWord, setMatchWord] = useState('');
+  const [charLength, setCharLength] = useState('150');
+  const [triggerWords, setTriggerWords] = useState('');
+  const [regex, setRegex] = useState('');
+
+  const generateRegex = () => {
+    const triggerWordArray = triggerWords.split(',').map(word => word.trim()).filter(word => word !== '');
+    const regexPattern = triggerWordArray.length > 0 ? `\\b((${triggerWordArray.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')}).{0,${charLength}}${matchWord})\\b` : '';
+    setRegex(regexPattern);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Variable Look-Behind Input</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4">
         <div className="grid gap-2">
@@ -135,7 +201,8 @@ const Home: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl px-4">
         <StandardRegexInput />
-        <VariableLookaroundInput />
+        <VariableLookaheadInput />
+        <VariableLookbehindInput />
       </div>
 
       <Button className="mt-8" onClick={handleGenerateDictionary}>
