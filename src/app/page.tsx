@@ -14,7 +14,7 @@ const StandardRegexInput = () => {
 
   const generateRegex = () => {
     const wordArray = words.split(',').map(word => word.trim()).filter(word => word !== '');
-    const regexPattern = wordArray.length > 0 ? `\\b(${wordArray.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b` : '';
+    const regexPattern = wordArray.length > 0 ? `\\b(${wordArray.join('|')})\\b` : '';
     setRegex(regexPattern);
   };
 
