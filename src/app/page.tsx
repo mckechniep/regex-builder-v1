@@ -62,7 +62,7 @@ const VariableLookaheadInput = () => {
 
   const generateRegex = () => {
     const triggerWordArray = triggerWords.split(',').map(word => word.trim()).filter(word => word !== '');
-    const regexPattern = triggerWordArray.length > 0 ? `\\b(${matchWord})\\b.{0,${charLength}}\b(${triggerWordArray.join('|')})\\b` : '';
+    const regexPattern = triggerWordArray.length > 0 ? `\\b(${matchWord})\\b.{0,${charLength}}\\b(${triggerWordArray.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b` : '';
     setRegex(regexPattern);
   };
 
@@ -112,7 +112,7 @@ const VariableLookaheadInput = () => {
         {regex && (
           <div className="grid gap-2">
             <Label>Regex Output</Label>
-            <Input readOnly value={`"${category}": [ r"${regex}" ]`} />
+            <Input readOnly value={`${category}: [ r"${regex}" ]`} />
           </div>
         )}
       </CardContent>
@@ -129,7 +129,7 @@ const VariableLookbehindInput = () => {
 
   const generateRegex = () => {
     const triggerWordArray = triggerWords.split(',').map(word => word.trim()).filter(word => word !== '');
-    const regexPattern = triggerWordArray.length > 0 ? `\\b(${triggerWordArray.join('|')})\\b.{0,${charLength}}\b(${matchWord})\b` : '';
+    const regexPattern = triggerWordArray.length > 0 ? `\\b(${triggerWordArray.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b.{0,${charLength}}\\b(${matchWord})\\b` : '';
     setRegex(regexPattern);
   };
 
@@ -179,7 +179,7 @@ const VariableLookbehindInput = () => {
         {regex && (
           <div className="grid gap-2">
             <Label>Regex Output</Label>
-            <Input readOnly value={`"${category}": [ r"${regex}" ]`} />
+            <Input readOnly value={`${category}: [ r"${regex}" ]`} />
           </div>
         )}
       </CardContent>
