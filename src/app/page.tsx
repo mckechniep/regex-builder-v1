@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import React, {useState} from 'react';
+import {Card, CardHeader, CardTitle, CardContent} from "@/components/ui/card";
+import {Input} from "@/components/ui/input";
+import {Textarea} from "@/components/ui/textarea";
+import {Button} from "@/components/ui/button";
+import {Label} from "@/components/ui/label";
 
-const StandardRegexInput = () => {
+const StandardRegexInput = ({onRegexChange}: { onRegexChange: (category: string, regex: string) => void }) => {
   const [category, setCategory] = useState('');
   const [words, setWords] = useState('');
   const [regex, setRegex] = useState('');
@@ -16,6 +16,7 @@ const StandardRegexInput = () => {
     const wordArray = words.split(',').map(word => word.trim()).filter(word => word !== '');
     const regexPattern = wordArray.length > 0 ? `\\b(${wordArray.join('|')})\\b` : '';
     setRegex(regexPattern);
+    onRegexChange(category, regexPattern);
   };
 
   return (
@@ -45,7 +46,7 @@ const StandardRegexInput = () => {
         {regex && (
           <div className="grid gap-2">
             <Label>Regex Output</Label>
-            <Input readOnly value={`${category}: [ r"${regex}" ]`} />
+            <Input readOnly value={regex ? `r"\\b(${words.split(',').map(word => word.trim()).filter(word => word !== '').join('|')})\\b"` : ''}/>
           </div>
         )}
       </CardContent>
@@ -53,7 +54,7 @@ const StandardRegexInput = () => {
   );
 };
 
-const VariableLookaheadInput = () => {
+const VariableLookaheadInput = ({onRegexChange}: { onRegexChange: (category: string, regex: string) => void }) => {
   const [category, setCategory] = useState('');
   const [matchWord, setMatchWord] = useState('');
   const [charLength, setCharLength] = useState('150');
@@ -64,6 +65,7 @@ const VariableLookaheadInput = () => {
     const triggerWordArray = triggerWords.split(',').map(word => word.trim()).filter(word => word !== '');
     const regexPattern = triggerWordArray.length > 0 ? `\\b(${matchWord})\\b.{0,${charLength}}\\b(${triggerWordArray.join('|')})\\b` : '';
     setRegex(regexPattern);
+    onRegexChange(category, regexPattern);
   };
 
   return (
@@ -112,7 +114,7 @@ const VariableLookaheadInput = () => {
         {regex && (
           <div className="grid gap-2">
             <Label>Regex Output</Label>
-            <Input readOnly value={`${category}: [ r"${regex}" ]`} />
+            <Input readOnly value={regex ? `r"\\b(${matchWord})\\b.{0,${charLength}}\\b(${triggerWords.split(',').map(word => word.trim()).filter(word => word !== '').join('|')})\\b"` : ''}/>
           </div>
         )}
       </CardContent>
@@ -120,7 +122,7 @@ const VariableLookaheadInput = () => {
   );
 };
 
-const VariableLookbehindInput = () => {
+const VariableLookbehindInput = ({onRegexChange}: { onRegexChange: (category: string, regex: string) => void }) => {
   const [category, setCategory] = useState('');
   const [matchWord, setMatchWord] = useState('');
   const [charLength, setCharLength] = useState('150');
@@ -131,6 +133,7 @@ const VariableLookbehindInput = () => {
     const triggerWordArray = triggerWords.split(',').map(word => word.trim()).filter(word => word !== '');
     const regexPattern = triggerWordArray.length > 0 ? `\\b(${triggerWordArray.join('|')})\\b.{0,${charLength}}\\b(${matchWord})\\b` : '';
     setRegex(regexPattern);
+    onRegexChange(category, regexPattern);
   };
 
   return (
@@ -179,7 +182,7 @@ const VariableLookbehindInput = () => {
         {regex && (
           <div className="grid gap-2">
             <Label>Regex Output</Label>
-            <Input readOnly value={`${category}: [ r"${regex}" ]`} />
+            <Input readOnly value={regex ? `r"\\b(${triggerWords.split(',').map(word => word.trim()).filter(word => word !== '').join('|')})\\b.{0,${charLength}}\\b(${matchWord})\\b"` : ''}/>
           </div>
         )}
       </CardContent>
@@ -189,10 +192,41 @@ const VariableLookbehindInput = () => {
 
 const Home: React.FC = () => {
   const [dictionary, setDictionary] = useState('');
+  const [standardRegexes, setStandardRegexes] = useState<{[key: string]: string}>({});
+  const [lookaheadRegexes, setLookaheadRegexes] = useState<{[key: string]: string}>({});
+  const [lookbehindRegexes, setLookbehindRegexes] = useState<{[key: string]: string}>({});
+
+  const handleStandardRegexChange = (category: string, regex: string) => {
+    setStandardRegexes(prev => ({...prev, [category]: regex}));
+  };
+
+  const handleLookaheadRegexChange = (category: string, regex: string) => {
+    setLookaheadRegexes(prev => ({...prev, [category]: regex}));
+  };
+
+  const handleLookbehindRegexChange = (category: string, regex: string) => {
+    setLookbehindRegexes(prev => ({...prev, [category]: regex}));
+  };
 
   const handleGenerateDictionary = () => {
-    // Placeholder for dictionary generation logic
-    setDictionary('{\n  "fruits": [ r"\\b(apple|banana|cherry)\\b" ],\n  "my_best_pal": [ r"\\b(tom(my)?.{0,150}(aa|sobriety|recovery)\\b" ]\n}');
+    const combinedDictionary: {[key: string]: string[]} = {};
+
+    // Combine standard regexes
+    Object.keys(standardRegexes).forEach(category => {
+      combinedDictionary[category] = [`r"${standardRegexes[category]}"`];
+    });
+
+    // Combine lookahead regexes
+    Object.keys(lookaheadRegexes).forEach(category => {
+      combinedDictionary[category] = [`r"${lookaheadRegexes[category]}"`];
+    });
+
+    // Combine lookbehind regexes
+    Object.keys(lookbehindRegexes).forEach(category => {
+      combinedDictionary[category] = [`r"${lookbehindRegexes[category]}"`];
+    });
+
+    setDictionary(JSON.stringify(combinedDictionary, null, 2));
   };
 
   return (
@@ -200,9 +234,9 @@ const Home: React.FC = () => {
       <h1 className="text-3xl font-bold mb-6 text-primary">Regex Dictionary Builder</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl px-4">
-        <StandardRegexInput />
-        <VariableLookaheadInput />
-        <VariableLookbehindInput />
+        <StandardRegexInput onRegexChange={handleStandardRegexChange} />
+        <VariableLookaheadInput onRegexChange={handleLookaheadRegexChange} />
+        <VariableLookbehindInput onRegexChange={handleLookbehindRegexChange} />
       </div>
 
       <Button className="mt-8" onClick={handleGenerateDictionary}>
