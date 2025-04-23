@@ -14,8 +14,7 @@ const StandardRegexInput = ({onRegexChange}: { onRegexChange: (category: string,
 
   const generateRegex = () => {
     const wordArray = words.split(',').map(word => word.trim()).filter(word => word !== '');
-    const escapedWordArray = wordArray.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const regexPattern = wordArray.length > 0 ? `\\b(${escapedWordArray.join('|')})\\b` : '';
+    const regexPattern = wordArray.length > 0 ? `\\b(${wordArray.join('|')})\\b` : '';
     setRegex(regexPattern);
     onRegexChange(category, regexPattern);
   };
@@ -64,9 +63,7 @@ const VariableLookaheadInput = ({onRegexChange}: { onRegexChange: (category: str
 
   const generateRegex = () => {
     const triggerWordArray = triggerWords.split(',').map(word => word.trim()).filter(word => word !== '');
-    const escapedTriggerWordArray = triggerWordArray.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const escapedMatchWord = matchWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regexPattern = triggerWordArray.length > 0 ? `\\b(${escapedMatchWord})\\b.{0,${charLength}}\\b(${escapedTriggerWordArray.join('|')})\\b` : '';
+    const regexPattern = triggerWordArray.length > 0 ? `\\b(${matchWord})\\b.{0,${charLength}}\\b(${triggerWordArray.join('|')})\\b` : '';
     setRegex(regexPattern);
     onRegexChange(category, regexPattern);
   };
@@ -134,10 +131,7 @@ const VariableLookbehindInput = ({onRegexChange}: { onRegexChange: (category: st
 
   const generateRegex = () => {
     const triggerWordArray = triggerWords.split(',').map(word => word.trim()).filter(word => word !== '');
-    const escapedTriggerWordArray = triggerWordArray.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const escapedMatchWord = matchWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-    const regexPattern = triggerWordArray.length > 0 ? `\\b(${escapedTriggerWordArray.join('|')})\\b.{0,${charLength}}\\b(${escapedMatchWord})\\b` : '';
+    const regexPattern = triggerWordArray.length > 0 ? `\\b(${triggerWordArray.join('|')})\\b.{0,${charLength}}\\b(${matchWord})\\b` : '';
     setRegex(regexPattern);
     onRegexChange(category, regexPattern);
   };
@@ -215,21 +209,18 @@ const Home: React.FC = () => {
   };
 
   const handleGenerateDictionary = () => {
-    const combinedDictionary: {[key: string]: string[]} = {};
+    const combinedDictionary: {[key: string]: string} = {};
 
-    // Combine standard regexes
     Object.keys(standardRegexes).forEach(category => {
-      combinedDictionary[category] = [`${standardRegexes[category]}`];
+      combinedDictionary[category] = standardRegexes[category];
     });
 
-    // Combine lookahead regexes
     Object.keys(lookaheadRegexes).forEach(category => {
-      combinedDictionary[category] = [`${lookaheadRegexes[category]}`];
+      combinedDictionary[category] = lookaheadRegexes[category];
     });
 
-    // Combine lookbehind regexes
     Object.keys(lookbehindRegexes).forEach(category => {
-      combinedDictionary[category] = [`${lookbehindRegexes[category]}`];
+      combinedDictionary[category] = lookbehindRegexes[category];
     });
 
     setDictionary(JSON.stringify(combinedDictionary, null, 2));
