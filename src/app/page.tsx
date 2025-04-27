@@ -6,15 +6,26 @@ import {Input} from "@/components/ui/input";
 import {Textarea} from "@/components/ui/textarea";
 import {Button} from "@/components/ui/button";
 import {Label} from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"; // imported your Select
 
 const StandardRegexInput = ({onRegexChange}: { onRegexChange: (category: string, regex: string) => void }) => {
   const [category, setCategory] = useState('');
   const [words, setWords] = useState('');
   const [regex, setRegex] = useState('');
+  const [patternType, setPatternType] = useState('word'); // new!
 
   const generateRegex = () => {
     const wordArray = words.split(',').map(word => word.trim()).filter(word => word !== '');
-    const regexPattern = wordArray.length > 0 ? `\\b(${wordArray.map(word => word).join('|')})\\b` : '';
+    let regexPattern = '';
+
+    if (wordArray.length > 0) {
+      if (patternType === 'emoji') {
+        regexPattern = `(${wordArray.join('|')})`;
+      } else {
+        regexPattern = `\\b(${wordArray.join('|')})\\b`;
+      }
+    }
+
     setRegex(regexPattern);
     onRegexChange(category, regexPattern);
   };
@@ -29,6 +40,7 @@ const StandardRegexInput = ({onRegexChange}: { onRegexChange: (category: string,
           <Label htmlFor="category">Category</Label>
           <Input
             id="category"
+            placeholder="fruits"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           />
@@ -42,11 +54,23 @@ const StandardRegexInput = ({onRegexChange}: { onRegexChange: (category: string,
             onChange={(e) => setWords(e.target.value)}
           />
         </div>
+        <div className="grid gap-2">
+          <Label htmlFor="patternType">Pattern Type</Label>
+          <Select value={patternType} onValueChange={(value) => setPatternType(value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select pattern type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="word">Words/Phrases (with word boundaries)</SelectItem>
+              <SelectItem value="emoji">Emoji (no word boundaries)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Button onClick={generateRegex}>Generate Regex</Button>
         {regex && (
           <div className="grid gap-2">
             <Label>Regex Output</Label>
-            <Input readOnly value={regex ? `r"${regex}"` : ''}/>
+            <Input readOnly value={regex ? `r"${regex}"` : ''} />
           </div>
         )}
       </CardContent>
@@ -75,17 +99,19 @@ const VariableLookaheadInput = ({onRegexChange}: { onRegexChange: (category: str
       </CardHeader>
       <CardContent className="grid gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="category">Category</Label>
+          <Label htmlFor="category">Category Name</Label>
           <Input
             id="category"
+            placeholder="fruit_mentions"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="matchWord">Matching Word/Phrase</Label>
+          <Label htmlFor="matchWord">Anchor Words</Label>
           <Input
             id="matchWord"
+            placeholder="apple, banana, cherry"
             value={matchWord}
             onChange={(e) => setMatchWord(e.target.value)}
           />
@@ -105,7 +131,7 @@ const VariableLookaheadInput = ({onRegexChange}: { onRegexChange: (category: str
           <Label htmlFor="triggerWords">Trigger Words/Phrases</Label>
           <Textarea
             id="triggerWords"
-            placeholder="aa, sobriety, recovery"
+            placeholder="ripe, juicy, fresh, organic, sweet, picked from the farm"
             value={triggerWords}
             onChange={(e) => setTriggerWords(e.target.value)}
           />
@@ -143,17 +169,19 @@ const VariableLookbehindInput = ({onRegexChange}: { onRegexChange: (category: st
       </CardHeader>
       <CardContent className="grid gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="category">Category</Label>
+          <Label htmlFor="category">Category Name</Label>
           <Input
             id="category"
+            placeholder="vegetable_mentions"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="matchWord">Matching Word/Phrase</Label>
+          <Label htmlFor="matchWord">Anchor Words</Label>
           <Input
             id="matchWord"
+            placeholder="onion, mushroom, carrot"
             value={matchWord}
             onChange={(e) => setMatchWord(e.target.value)}
           />
@@ -173,7 +201,7 @@ const VariableLookbehindInput = ({onRegexChange}: { onRegexChange: (category: st
           <Label htmlFor="triggerWords">Trigger Words/Phrases</Label>
           <Textarea
             id="triggerWords"
-            placeholder="aa, sobriety, recovery"
+            placeholder="chopped, steamed, grilled, frozen, organic, roasted"
             value={triggerWords}
             onChange={(e) => setTriggerWords(e.target.value)}
           />
@@ -191,7 +219,9 @@ const VariableLookbehindInput = ({onRegexChange}: { onRegexChange: (category: st
 };
 
 const Home: React.FC = () => {
-  const [dictionary, setDictionary] = useState('');
+  // Changed from string to object to track the actual dictionary structure
+  const [dictionary, setDictionary] = useState<{[key: string]: string[]}>({});
+  const [displayDictionary, setDisplayDictionary] = useState(''); // For display only
   const [standardRegexes, setStandardRegexes] = useState<{[key: string]: string}>({});
   const [lookaheadRegexes, setLookaheadRegexes] = useState<{[key: string]: string}>({});
   const [lookbehindRegexes, setLookbehindRegexes] = useState<{[key: string]: string}>({});
@@ -208,25 +238,78 @@ const Home: React.FC = () => {
     setLookbehindRegexes(prev => ({...prev, [category]: regex}));
   };
 
+  // Update to add new patterns to the existing dictionary
   const handleGenerateDictionary = () => {
-    let combinedDictionary: {[key: string]: string[]} = {};
-
+    // Create a copy of the current dictionary
+    let updatedDictionary = {...dictionary};
+    
     // Process standard regexes
     Object.keys(standardRegexes).forEach(category => {
-      combinedDictionary[category] = [`${standardRegexes[category]}`];
+      if (standardRegexes[category]) {
+        // If category exists, add to it, otherwise create new array
+        if (updatedDictionary[category]) {
+          // Check if this pattern already exists to avoid duplicates
+          if (!updatedDictionary[category].includes(standardRegexes[category])) {
+            updatedDictionary[category] = [...updatedDictionary[category], standardRegexes[category]];
+          }
+        } else {
+          updatedDictionary[category] = [standardRegexes[category]];
+        }
+      }
     });
-
+    
     // Process lookahead regexes
     Object.keys(lookaheadRegexes).forEach(category => {
-      combinedDictionary[category] = [`${lookaheadRegexes[category]}`];
+      if (lookaheadRegexes[category]) {
+        if (updatedDictionary[category]) {
+          if (!updatedDictionary[category].includes(lookaheadRegexes[category])) {
+            updatedDictionary[category] = [...updatedDictionary[category], lookaheadRegexes[category]];
+          }
+        } else {
+          updatedDictionary[category] = [lookaheadRegexes[category]];
+        }
+      }
     });
-
+    
     // Process lookbehind regexes
     Object.keys(lookbehindRegexes).forEach(category => {
-      combinedDictionary[category] = [`${lookbehindRegexes[category]}`];
+      if (lookbehindRegexes[category]) {
+        if (updatedDictionary[category]) {
+          if (!updatedDictionary[category].includes(lookbehindRegexes[category])) {
+            updatedDictionary[category] = [...updatedDictionary[category], lookbehindRegexes[category]];
+          }
+        } else {
+          updatedDictionary[category] = [lookbehindRegexes[category]];
+        }
+      }
     });
+    
+    // Update dictionary state
+    setDictionary(updatedDictionary);
+    
+    // Create a Python-compatible representation for display
+    let pythonDict = "{\n";
+    Object.keys(updatedDictionary).forEach(category => {
+      pythonDict += `  "${category}": [\n`;
+      updatedDictionary[category].forEach((pattern, index) => {
+        pythonDict += `    r"${pattern}"${index < updatedDictionary[category].length - 1 ? ',' : ''}\n`;
+      });
+      pythonDict += `  ],\n`;
+    });
+    pythonDict += "}";
+    
+    setDisplayDictionary(pythonDict);
+    
+    // Clear the inputs after adding to dictionary
+    setStandardRegexes({});
+    setLookaheadRegexes({});
+    setLookbehindRegexes({});
+  };
 
-    setDictionary(JSON.stringify(combinedDictionary, null, 2));
+  // Reset dictionary function
+  const handleResetDictionary = () => {
+    setDictionary({});
+    setDisplayDictionary('');
   };
 
   return (
@@ -239,17 +322,22 @@ const Home: React.FC = () => {
         <VariableLookbehindInput onRegexChange={handleLookbehindRegexChange} />
       </div>
 
-      <Button className="mt-8" onClick={handleGenerateDictionary}>
-        Generate Dictionary
-      </Button>
+      <div className="flex gap-4 mt-8">
+        <Button onClick={handleGenerateDictionary}>
+          Add to Dictionary
+        </Button>
+        <Button variant="destructive" onClick={handleResetDictionary}>
+          Reset Dictionary
+        </Button>
+      </div>
 
-      {dictionary && (
+      {displayDictionary && (
         <Card className="mt-8 w-full max-w-5xl">
           <CardHeader>
             <CardTitle>Generated Dictionary</CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="whitespace-pre-wrap">{dictionary}</pre>
+            <pre className="whitespace-pre-wrap">{displayDictionary}</pre>
           </CardContent>
         </Card>
       )}
