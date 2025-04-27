@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import {Card, CardHeader, CardTitle, CardContent} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
 import {Textarea} from "@/components/ui/textarea";
@@ -8,11 +8,98 @@ import {Button} from "@/components/ui/button";
 import {Label} from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"; // imported your Select
 
-const StandardRegexInput = ({onRegexChange}: { onRegexChange: (category: string, regex: string) => void }) => {
+const CategoryExpander = ({ onExpand }: { onExpand: (expandedWords: string) => void }) => {
+  const [categoryInput, setCategoryInput] = useState('');
+  const [expandedResult, setExpandedResult] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleExpand = async () => {
+    setLoading(true);
+    setError('');
+    setExpandedResult('');
+    try {
+      const res = await fetch('/api/expand-category', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: categoryInput }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to expand category.');
+      }
+
+      const data = await res.json();
+      setExpandedResult(data.expanded);
+    } catch (err) {
+      setError('Expansion failed. Try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAccept = () => {
+    onExpand(expandedResult);
+    setExpandedResult('');
+    setCategoryInput('');
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Expand Category with AI</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="categoryInput">Enter Theme or Category</Label>
+          <Input
+            id="categoryInput"
+            placeholder="e.g., fruits, emotions, fitness"
+            value={categoryInput}
+            onChange={(e) => setCategoryInput(e.target.value)}
+          />
+        </div>
+        <Button onClick={handleExpand} disabled={loading}>
+          {loading ? "Expanding..." : "Expand Category"}
+        </Button>
+
+        {expandedResult && (
+          <div className="grid gap-2 mt-4">
+            <Label>Expanded Words/Phrases</Label>
+            <Textarea
+              value={expandedResult}
+              readOnly
+              className="h-32"
+            />
+            <Button variant="secondary" onClick={handleAccept}>
+              Accept Expanded Words
+            </Button>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-red-500 text-sm mt-2">
+            {error}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+
+const StandardRegexInput = ({ onRegexChange, words: externalWords }: { onRegexChange: (category: string, regex: string) => void, words: string }) => {
   const [category, setCategory] = useState('');
   const [words, setWords] = useState('');
   const [regex, setRegex] = useState('');
   const [patternType, setPatternType] = useState('word'); // new!
+
+  useEffect(() => {
+    if (externalWords) {
+      setWords(externalWords);
+    }
+  }, [externalWords]);  
 
   const generateRegex = () => {
     const wordArray = words.split(',').map(word => word.trim()).filter(word => word !== '');
@@ -222,6 +309,7 @@ const Home: React.FC = () => {
   // Changed from string to object to track the actual dictionary structure
   const [dictionary, setDictionary] = useState<{[key: string]: string[]}>({});
   const [displayDictionary, setDisplayDictionary] = useState(''); // For display only
+  const [standardWords, setStandardWords] = useState(''); 
   const [standardRegexes, setStandardRegexes] = useState<{[key: string]: string}>({});
   const [lookaheadRegexes, setLookaheadRegexes] = useState<{[key: string]: string}>({});
   const [lookbehindRegexes, setLookbehindRegexes] = useState<{[key: string]: string}>({});
@@ -317,7 +405,8 @@ const Home: React.FC = () => {
       <h1 className="text-3xl font-bold mb-6 text-primary">Regex Dictionary Builder</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl px-4">
-        <StandardRegexInput onRegexChange={handleStandardRegexChange} />
+        <CategoryExpander onExpand={(expandedWords) => setStandardWords(expandedWords)} />
+        <StandardRegexInput onRegexChange={handleStandardRegexChange} words={standardWords} />
         <VariableLookaheadInput onRegexChange={handleLookaheadRegexChange} />
         <VariableLookbehindInput onRegexChange={handleLookbehindRegexChange} />
       </div>
